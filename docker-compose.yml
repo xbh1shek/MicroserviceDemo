@@ -1,0 +1,59 @@
+version: '3.4'
+networks:
+  backend:
+
+
+services:
+  cataloguedb:
+    container_name: catelogue-DB
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Test@123456
+    networks:
+      - backend
+    ports:
+      - 18001:1433  
+      
+  inventorydb:
+    container_name: "inventory-DB"
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Test@123456
+    networks:
+      - backend
+    ports:
+      - 18002:1433
+      
+  catalogue:
+    container_name: catalogue-api
+    image: ${DOCKER_REGISTRY-}catalogue
+    build:
+      context: .
+      dockerfile: Services/Catalogue/Dockerfile
+    depends_on:
+      - cataloguedb
+    networks:
+      - backend
+    ports:
+      - 57223:8080  
+
+  inventory:
+    container_name: inventory-api
+    image: ${DOCKER_REGISTRY-}inventory
+    build:
+      context: .
+      dockerfile: Services/Inventory/Dockerfile
+    depends_on:
+      - inventorydb
+    networks:
+      - backend
+    ports:
+      - 57221:8080
+
+
+
+
+
+  

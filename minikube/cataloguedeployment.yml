@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalogue-deployment
+  labels:
+    app: catalogue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalogue
+  template:
+    metadata:
+      labels:
+        app: catalogue
+    spec:
+      containers:
+        - name: catalogue-contn
+          image:  catalogueapi:v1
+          imagePullPolicy: Always          
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ConnectionStrings__CatalogueContext
+              valueFrom:
+                  configMapKeyRef:
+                    name: cataloguedb-configmap
+                    key: connection_string            
+
+          resources:
+            requests:
+              memory: "1G"
+              cpu: "1"
+            limits:
+              memory: "1G"
+              cpu: "1"
+      imagePullSecrets:
+        - name: demoappacr2secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalogue-service1
+spec:  
+  selector:
+    app: catalogue
+  ports:
+    - port: 8080
+      targetPort: 80
+  
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: catalogue-ingress  
+spec:
+  rules:
+  - host: demoapp.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: catalogue-service1
+            port:
+              number: 80

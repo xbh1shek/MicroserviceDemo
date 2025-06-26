@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cataloguedb-configmap
+data:
+  connection_string: "Data Source=cataloguedb-deployment;TrustServerCertificate=true;Initial Catalog=CatalogueContext;User ID=sa;Password=Test@123456"

@@ -1,0 +1,21 @@
+version: '3.4'
+
+services:
+  catalogue:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - "ConnectionStrings:CatalogueContext=Data Source=cataloguedb;TrustServerCertificate=True;Initial Catalog=CatalogueContext;User ID=sa;Password=Test@123456" 
+    ports:
+      - "8080"
+
+  
+  inventory:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - "ConnectionStrings:CatalogueContext=Data Source=inventorydb;TrustServerCertificate=True;Initial Catalog=InventoryContext;User ID=sa;Password=Test@123456" 
+    ports:
+      - "8080"
+
+

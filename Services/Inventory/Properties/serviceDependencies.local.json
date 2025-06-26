@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "cosmosdb1": {
+      "type": "cosmosdb.azure",
+      "connectionId": "ConnectionStrings:InventoryContext"
+    },
+    "mssql1": {
+      "type": "mssql.local",
+      "connectionId": "ConnectionStrings:InventoryContext"
+    }
+  }
+}

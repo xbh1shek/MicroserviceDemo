@@ -1,0 +1,219 @@
+Getting Started with Minikube
+----
+>
+Start Docker Desktop
+
+>
+Start your minikube cluster
+	minikube start
+
+>
+Interact with your cluster
+	kubectl get po -A
+
+Alternative
+	minikube kubectl -- get po -A
+
+>
+See that our K8s is up and running
+
+>
+See dashboard
+	minikube dashboard
+===========================================================================
+ASP.NET Container Expose Port - CONFIGURE TO LISTEN - 0.0.0.0:8080
+---
+
+Todo List:
+Edit Program.cs
+Build Docker Image
+Run Docker Container
+Test running docker container on local docker env
+Tag Docker Image
+Publish image to a Registry: Docker Hub
+
+-----
+>
+goto Program.cs
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddSingleton<List<Product>>();
+
+	// Add the following for Kubernetes Deployment
+	var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+	var url = $"http://0.0.0.0:{port}";
+	builder.WebHost.UseUrls(url);
+
+var app = builder.Build();
+
+ADDED
+	// Add the following for Kubernetes Deployment
+	var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+	var url = $"http://0.0.0.0:{port}";
+	builder.WebHost.UseUrls(url);
+
+>>
+OTHER WAYS:
+ > dockerfile
+add ENV varible into DockerFile
+	https://github.com/dotnet/dotnet-docker/issues/3968
+
+ "environmentVariables": {
+        "ASPNETCORE_URLS": "https://+:443;http://+:80",
+        "ASPNETCORE_HTTPS_PORT": "44360"
+      },
+
+ >k8s deployment ENV variable inject
+ 	https://www.youtube.com/watch?v=63FLcPHUCPM
+ 	dk 46.11
+
+ 	kestrel__endpoints__http__url
+ 	http://0.0.0.0:80
+
+-----
+goto Code location
+
+>>
+Build Docker Image
+
+Run command at same directory level of Dockerfile:
+    docker build -t productservice .
+
+See available images:
+    docker images
+
+>>
+Run Docker Image
+You can run your app in a container using the following command:
+
+    docker run -d -p 8080:80 --name productservicecontainer productservice
+
+Check if the container is running by executing:
+    docker ps
+
+Hit Endpoint:
+http://localhost:8080/api/products
+[{"id":1,"name":"Product A","price":12.99},{"id":2,"name":"Product B","price":23.99},{"id":3,"name":"Product C","price":34.99}]
+
+Stop Running Container:
+    docker stop productservicecontainer
+    docker rm productservicecontainer
+
+>>
+Publish image to a Registry: Docker Hub
+
+Docker Hub is a central place to upload Docker images. 
+Many products, including Microsoft Azure, can create containers based on images in Docker Hub.
+
+Create a Docker Hub account if you don't have one: 
+	https://hub.docker.com/    
+
+>
+Step 1: Log in to Docker Hub
+Open a terminal or command prompt and run the following command to log in to Docker Hub:
+
+	docker login
+
+Enter your Docker Hub username and password when prompted.
+
+Username: mehmetozkaya
+Password: 
+Login Succeeded
+
+>
+Step 2: Tag your Docker image
+
+Find the IMAGE ID of your local Docker image by running:
+	docker images
+
+Tag your Docker image with your Docker Hub username and the desired repository name:
+	docker tag productservice mehmetozkaya/productservice:latest
+
+see tagged image
+	docker images
+
+>
+Step 3: Push the Docker image to Docker Hub
+Push the tagged Docker image to your Docker Hub repository:
+	docker push mehmetozkaya/productservice:latest
+
+Check
+	https://hub.docker.com/
+See
+	https://hub.docker.com/repository/docker/mehmetozkaya/productservice/general
+
+
+-----
+Ready to deploy into minikube
+========================================================================================================
+>Check service
+The easiest way to access this service is to let minikube launch a web browser for you:
+	kubectl get services hello-minikube
+
+	minikube service hello-minikube
+=====================================================================================================
+Create Ingress for External Access of Product Microservice
+----
+No longer need a service type of LoadBalancer since the service does not need to be accessible from the internet. 
+It only needs to be accessible from the Ingress Controller (internal to the cluster) 
+  so we can change the service type to ClusterIP.
+
+Update your service.yaml file to look like this:
+
+    Remove type
+    Create Ingress into product.yaml file
+
+We have created Ingress object and referring to our service object which is product-service.
+and host address is product.local
+
+>
+So we should add this dns address into our host file.
+
+Update your hosts file (/etc/hosts on Linux and macOS or C:\Windows\System32\drivers\etc\hosts on Windows) to add the following line:
+------------NOT WORKING---------------------
+First get IP of minikube
+minikube ip
+192.168.49.2
+
+>
+Add this line:
+
+# Added by Minikube Custom Domain
+192.168.49.2 product.local
+-----------NOT WORKING--------------------------
+ADD BELOW TO HOST FILE 
+127.0.0.1 <DOMAINNAME>
+>>
+Now we are ready to deploy our ingress.
+But before that we should active Ingress addons into our minikube installment.
+
+See all list
+	minikube addons list
+
+Activate Ingress for our local minikube
+	minikube addons enable ingress
+	minikube addons enable ingress-DNS
+
+>>
+Re-apply the app service manifest.
+Re-create all objects:
+
+kubectl delete -f product.yaml
+kubectl apply -f product.yaml
+
+> See all
+kubectl get all
+
+kubectl get ingress
+NAME              CLASS   HOSTS           ADDRESS        PORTS   AGE
+product-ingress   nginx   product.local   192.168.49.2   80      3m29s
+
+>
+START THE MINIKUBE TUNNEL and don not close
+    minikube tunnel 
+
+https://minikube.sigs.k8s.io/docs/handbook/pushing/
+@FOR /f "tokens=*" %i IN ('minikube -p minikube docker-env --shell cmd') DO @%i
+docker build -t budgetapi:v2 -f src/services/BudgetConfig/BudgetConfig.Api/Dockerfile .
